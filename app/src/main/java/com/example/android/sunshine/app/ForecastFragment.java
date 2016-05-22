@@ -92,7 +92,7 @@ public class ForecastFragment extends Fragment {
         BufferedReader reader = null;
         // "http://api.openweathermap.org/data/2.5/forecast?q=518057,cn&mode=json&cnt=7&units=metric"
         String weatherAPIStart = "http://api.openweathermap.org/data/2.5/forecast";
-        String APPID = "1f92720e9bc9c9462dded8373e1d38de";
+        String APPID = "YOUR_APP_ID";
 
         private String getReadableDateString(long time) {
             SimpleDateFormat shortenedDataFormat = new SimpleDateFormat("EE MM dd");
