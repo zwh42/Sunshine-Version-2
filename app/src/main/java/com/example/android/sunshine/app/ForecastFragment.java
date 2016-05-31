@@ -1,18 +1,23 @@
 package com.example.android.sunshine.app;
 
+import android.app.Fragment;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
+
 import android.text.format.Time;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -59,6 +64,18 @@ public class ForecastFragment extends Fragment {
 
         ListView forecastListView = (ListView) rootView.findViewById(R.id.list);
         forecastListView.setAdapter(mForecastAdapter);
+        forecastListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+                String forecast = mForecastAdapter.getItem(position);
+                Toast toast = Toast.makeText(getActivity().getApplicationContext(), forecast, Toast.LENGTH_SHORT);
+                toast.show();
+                Intent intent = new Intent(getActivity(), DetailActivity.class);
+                intent.putExtra("forecast", forecast);
+                getActivity().startActivity(intent);
+            }
+        });
 
 
         return rootView;
@@ -79,6 +96,8 @@ public class ForecastFragment extends Fragment {
             case R.id.action_refresh:
                 new FetchWeatherTask().execute("518057");
                 return true;
+            case R.id.action_settings:
+                return true;
         }
 
         return false;
@@ -92,7 +111,7 @@ public class ForecastFragment extends Fragment {
         BufferedReader reader = null;
         // "http://api.openweathermap.org/data/2.5/forecast?q=518057,cn&mode=json&cnt=7&units=metric"
         String weatherAPIStart = "http://api.openweathermap.org/data/2.5/forecast";
-        String APPID = "YOUR_APP_ID";
+        String APPID = "1f92720e9bc9c9462dded8373e1d38de";
 
         private String getReadableDateString(long time) {
             SimpleDateFormat shortenedDataFormat = new SimpleDateFormat("EE MM dd");
@@ -117,6 +136,7 @@ public class ForecastFragment extends Fragment {
             final String OWM_MIN = "temp_min";
             final String OWM_DESCRIPTION = "main";
 
+            Log.d(TAG, "getWeatherDataFromJson: json str: " + forecastJsonStr);
             JSONObject forecastJson = new JSONObject(forecastJsonStr);
             JSONArray weatherArray = forecastJson.getJSONArray(OWM_LIST);
 
@@ -195,6 +215,7 @@ public class ForecastFragment extends Fragment {
                         .appendQueryParameter("mode", "json").appendQueryParameter("cnt", Integer.toString(numDays)).appendQueryParameter("units", "metric")
                         .appendQueryParameter("APPID", APPID).build().toString();
 
+                Log.d(TAG, "doInBackground: url string: " + urlString);
                 URL url = new URL(urlString);
                 urlConnection = (HttpURLConnection) url.openConnection();
                 urlConnection.setRequestMethod("GET");
