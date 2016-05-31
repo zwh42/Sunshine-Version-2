@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 
+import android.preference.PreferenceManager;
 import android.text.format.Time;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -47,6 +48,12 @@ public class ForecastFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
+    }
+
+    @Override
+    public void onStart(){
+        super.onStart();
+        updateForecast();
     }
 
     @Override
@@ -94,13 +101,17 @@ public class ForecastFragment extends Fragment {
 
         switch (id) {
             case R.id.action_refresh:
-                new FetchWeatherTask().execute("518057");
+                updateForecast();
                 return true;
             case R.id.action_settings:
                 return true;
         }
 
         return false;
+    }
+
+    private void updateForecast(){
+        new FetchWeatherTask().execute("518057");
     }
 
     private class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
@@ -185,6 +196,14 @@ public class ForecastFragment extends Fragment {
                 double high = temperatureObject.getDouble(OWM_MAX);
                 double low = temperatureObject.getDouble(OWM_MIN);
 
+                String temp_scale = PreferenceManager.getDefaultSharedPreferences(getActivity()).getString(getString(R.string.temp_key), "Celsius");
+                Log.d(TAG, "getWeatherDataFromJson: " + temp_scale);
+                if (temp_scale.equals("Fahrenheit")){
+                    Log.d(TAG, "getWeatherDataFromJson: convert temp scale from Celsius to Fahrenheit");
+                    high = high * 1.8 + 32;
+                    low = low * 1.8 + 32;
+                }
+
                 highAndLow = formatHighLows(high, low);
                 resultStrs[i] = day + " - " + description + " - " + highAndLow;
             }
@@ -207,6 +226,9 @@ public class ForecastFragment extends Fragment {
                 return null;
             }
             String zipcode = params[0];
+
+            zipcode = PreferenceManager.getDefaultSharedPreferences(getActivity()).getString(getString(R.string.pref_location_key), zipcode);
+            Log.d(TAG, "doInBackground, loaded zip code " + zipcode);
             int numDays = 7;
 
             try {
