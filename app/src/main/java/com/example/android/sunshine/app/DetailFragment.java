@@ -33,7 +33,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
     private static final String FORECAST_SHARE_HASHTAG = " #SunshineApp";
 
-    private static final int COL_WEATHER_ID = 0;
+    private static final int COL_WEATHER_ID = 9;
     private static final int COL_WEATHER_DATE = 1;
     private static final int COL_WEATHER_DESC = 2;
     private static final int COL_WEATHER_MAX_TEMP = 3;
@@ -53,6 +53,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             WeatherContract.WeatherEntry.COLUMN_WIND_SPEED,
             WeatherContract.WeatherEntry.COLUMN_DEGREES,
             WeatherContract.WeatherEntry.COLUMN_PRESSURE,
+            WeatherContract.WeatherEntry.COLUMN_WEATHER_ID,
     };
 
     ShareActionProvider mShareActionProvider;
@@ -102,6 +103,8 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             return;
         }
 
+        int weatherId = cursor.getInt(COL_WEATHER_ID);
+        Log.d(LOG_TAG, "onLoadFinished: weatherID: " + weatherId);
         String dateString = Utility.formatDate(cursor.getLong(COL_WEATHER_DATE));
         String weatherDescription = cursor.getString(COL_WEATHER_DESC);
         boolean isMetric = Utility.isMetric(getActivity());
@@ -127,11 +130,13 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         julianDayTextView.setText(Utility.getFriendlyDayString(getActivity().getApplicationContext(), cursor.getLong(COL_WEATHER_DATE)));
         highTempTextView.setText(high);
         lowTempTextView.setText(low);
-        humidityTextView.setText(cursor.getString(COL_WEATHER_HUMIDITY));
+        humidityTextView.setText(getActivity().getString(R.string.format_humidity, cursor.getFloat(COL_WEATHER_HUMIDITY)));
+
         windTextView.setText(Utility.getFormattedWind(getActivity().getApplicationContext(), cursor.getFloat(COL_WEATHER_WIND_SPEED),cursor.getFloat(COL_WEATHER_WIND_DEGREE)));
-        pressureTextView.setText(cursor.getString(COL_WEATHER_PRESSURE));
+        pressureTextView.setText(getActivity().getString(R.string.format_pressure, cursor.getFloat(COL_WEATHER_PRESSURE)));
         descriptionTextView.setText(cursor.getString(COL_WEATHER_DESC));
-        iconImageView.setImageResource(R.drawable.ic_launcher);
+        iconImageView.setImageResource(Utility.getArtResourceForWeatherCondition(weatherId));
+        iconImageView.setImageResource(Utility.getArtResourceForWeatherCondition(weatherId));
 
         if(mShareActionProvider != null){
             mShareActionProvider.setShareIntent(createShareForecastIntent());
