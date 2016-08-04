@@ -23,37 +23,43 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends ActionBarActivity implements ForecastFragment.Callback {
 
+    private static final String DETAILFRAGMENT_TAG = "DFTAG";
     private final String LOG_TAG = MainActivity.class.getSimpleName();
-
     private String mLocation;
-    private final String FORECASTFRAGMENT_TAG = "forecast_fragment";
-
+    private boolean mTwoPane;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new ForecastFragment(), FORECASTFRAGMENT_TAG)
-                    .commit();
-        }
         mLocation = Utility.getPreferredLocation(this);
-        Log.d(LOG_TAG, "onCreate location:  " + mLocation);
+
+        if (findViewById(R.id.weather_detail_container) != null) {
+            mTwoPane = true;
+
+            if (savedInstanceState == null) {
+                getSupportFragmentManager().beginTransaction().replace(R.id.weather_detail_container, new DetailFragment(), DETAILFRAGMENT_TAG).commit();
+
+            }
+        } else {
+            mTwoPane = false;
+        }
     }
 
 
     @Override
-    protected void onResume(){
+    protected void onResume() {
         super.onResume();
-        if(mLocation != null && ! mLocation.equals(Utility.getPreferredLocation(this))){
-            ForecastFragment ff = (ForecastFragment)getSupportFragmentManager().findFragmentByTag(FORECASTFRAGMENT_TAG);
+        if (mLocation != null && !mLocation.equals(Utility.getPreferredLocation(this))) {
+            ForecastFragment ff = (ForecastFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_forecast);
             if (ff != null) {
                 ff.onLocationChanged();
             }
             mLocation = Utility.getPreferredLocation(this);
+
+
         }
 
     }
@@ -87,7 +93,7 @@ public class MainActivity extends ActionBarActivity {
 
     private void openPreferredLocationInMap() {
 
-        String location =  Utility.getPreferredLocation(this);
+        String location = Utility.getPreferredLocation(this);
 
         // Using the URI scheme for showing a location found on a map.  This super-handy
         // intent can is detailed in the "Common Intents" page of Android's developer site:
@@ -104,5 +110,21 @@ public class MainActivity extends ActionBarActivity {
         } else {
             Log.d(LOG_TAG, "Couldn't call " + location + ", no receiving apps installed!");
         }
+    }
+
+    public void onItemSelected(Uri contentUri) {
+        if (mTwoPane) {
+            Bundle args = new Bundle();
+            args.putParcelable(DetailFragment.DETAIL_URI, contentUri);
+
+            DetailFragment fragment = new DetailFragment();
+            fragment.setArguments(args);
+
+            getSupportFragmentManager().beginTransaction().replace(R.id.weather_detail_container, fragment, DETAILFRAGMENT_TAG).commit();
+        } else {
+            Intent intent = new Intent(this, DetailActivity.class).setData(contentUri);
+            startActivity(intent);
+        }
+
     }
 }

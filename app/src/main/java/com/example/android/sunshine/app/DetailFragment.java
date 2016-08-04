@@ -30,6 +30,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     private static final String LOG_TAG = DetailFragment.class.getSimpleName();
 
     private static final int DETAIL_FORECAST_LOADER = 0;
+    static final String DETAIL_URI = "URI";
 
     private static final String FORECAST_SHARE_HASHTAG = " #SunshineApp";
 
@@ -58,6 +59,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
     ShareActionProvider mShareActionProvider;
     private static String mForecastStr;
+    private Uri mUri;
 
     public DetailFragment() {
         setHasOptionsMenu(true);
@@ -66,6 +68,12 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+
+        Bundle arguments = getArguments();
+        if (arguments != null) {
+            mUri = arguments.getParcelable(DetailFragment.DETAIL_URI);
+        }
+
 
         View rootView = inflater.inflate(R.layout.fragment_detail, container, false);
 
@@ -80,12 +88,12 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
     @Override
     public Loader<Cursor> onCreateLoader(int i, Bundle bundle){
-        Intent intent = getActivity().getIntent();
-        if (intent != null){
-            Uri detail_uri = Uri.parse(intent.getDataString());
+
+        if (mUri != null) {
+            Log.d(LOG_TAG, "onCreateLoader: " + mUri);
             return new CursorLoader(
                     getActivity(),
-                    detail_uri,
+                    mUri,
                     FORECAST_COLUMNS,
                     null,
                     null,
@@ -111,11 +119,6 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         String high = Utility.formatTemperature(getActivity().getApplicationContext(), cursor.getDouble(COL_WEATHER_MAX_TEMP), isMetric);
         String low = Utility.formatTemperature(getActivity().getApplicationContext(), cursor.getDouble(COL_WEATHER_MIN_TEMP), isMetric);
 
-        /*
-        mForecastStr = String.format("%s - %s - %s/%s", dateString, weatherDescription, high, low);
-        TextView detailTextView = (TextView) getView().findViewById(R.id.detail_text);
-        detailTextView.setText(mForecastStr);
-        */
 
         TextView julianDayTextView = (TextView) getView().findViewById(R.id.julian_day);
         TextView dateTextView = (TextView) getView().findViewById(R.id.date);
@@ -176,5 +179,15 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         shareIntent.putExtra(Intent.EXTRA_TEXT,
                 mForecastStr + FORECAST_SHARE_HASHTAG);
         return shareIntent;
+    }
+
+    void onLocationChanged(String newLocation) {
+        Uri uri = mUri;
+        if (uri != null) {
+            long date = WeatherContract.WeatherEntry.getDateFromUri(uri);
+            Uri updatedUri = WeatherContract.WeatherEntry.buildWeatherLocationWithDate(newLocation, date);
+            mUri = updatedUri;
+            getLoaderManager().restartLoader(DETAIL_FORECAST_LOADER, null, this);
+        }
     }
 }

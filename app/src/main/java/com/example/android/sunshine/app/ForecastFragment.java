@@ -15,7 +15,6 @@
  */
 package com.example.android.sunshine.app;
 
-import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -39,6 +38,11 @@ import com.example.android.sunshine.app.data.WeatherContract;
  * Encapsulates fetching the forecast and displaying it as a {@link ListView} layout.
  */
 public class ForecastFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
+
+
+    public interface Callback {
+        void onItemSelected(Uri dateUri);
+    }
 
     private static final String LOG_TAG = "ForecastFragment";
 
@@ -122,11 +126,17 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
                 Log.d(LOG_TAG, "onItemClick: clicked");
                 if (cursor != null){
                     String locationSetting = Utility.getPreferredLocation(getActivity());
+                   /*
                     Intent intent = new Intent(getActivity(), DetailActivity.class);
                     intent.setData(WeatherContract.WeatherEntry.buildWeatherLocationWithDate(locationSetting,
                             cursor.getLong(COL_WEATHER_DATE)));
+
                     Log.d(LOG_TAG, "onItemClick: cursor not null");
                     startActivity(intent);
+                    */
+                    ((Callback) getActivity()).onItemSelected(WeatherContract.WeatherEntry.
+                            buildWeatherLocationWithDate(locationSetting, cursor.getLong(COL_WEATHER_DATE)));
+
                 }
 
 
