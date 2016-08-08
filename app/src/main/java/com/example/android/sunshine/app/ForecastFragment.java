@@ -44,10 +44,17 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
         void onItemSelected(Uri dateUri);
     }
 
+    public static final String IS_TWO_PANE = "TWO_PANE";
     private static final String LOG_TAG = "ForecastFragment";
+
 
     private ForecastAdapter mForecastAdapter;
     private static final int FORECAST_LOADER = 0;
+    private static final String LIST_ITEM_POSITION = "POSITION";
+
+    private ListView mListView;
+    private int mPosition = ListView.INVALID_POSITION;
+    private boolean mUseTodayLayout = true;
 
     private static final String[] FORECAST_COLUMNS = {
             // In this case the id needs to be fully qualified with a table name, since
@@ -107,44 +114,55 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
         return super.onOptionsItemSelected(item);
     }
 
+    public void setUseTodayLayout(boolean useTodayLayout) {
+        mUseTodayLayout = useTodayLayout;
+        Log.d(LOG_TAG, "setUseTodayLayout: " + mUseTodayLayout);
+        if (mForecastAdapter != null) {
+            mForecastAdapter.setUseTodayLayout(mUseTodayLayout);
+        }
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+                             final Bundle savedInstanceState) {
 
         mForecastAdapter = new ForecastAdapter(getActivity(), null, 0);
+
 
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
         // Get a reference to the ListView, and attach this adapter to it.
-        ListView listView = (ListView) rootView.findViewById(R.id.listview_forecast);
-        listView.setAdapter(mForecastAdapter);
+        mListView = (ListView) rootView.findViewById(R.id.listview_forecast);
 
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener(){
+        mListView.setAdapter(mForecastAdapter);
+
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView adapterView, View view, int position, long l){
+                mPosition = position;
                 Cursor cursor = (Cursor) adapterView.getItemAtPosition(position);
-                Log.d(LOG_TAG, "onItemClick: clicked");
                 if (cursor != null){
                     String locationSetting = Utility.getPreferredLocation(getActivity());
-                   /*
-                    Intent intent = new Intent(getActivity(), DetailActivity.class);
-                    intent.setData(WeatherContract.WeatherEntry.buildWeatherLocationWithDate(locationSetting,
-                            cursor.getLong(COL_WEATHER_DATE)));
-
-                    Log.d(LOG_TAG, "onItemClick: cursor not null");
-                    startActivity(intent);
-                    */
                     ((Callback) getActivity()).onItemSelected(WeatherContract.WeatherEntry.
                             buildWeatherLocationWithDate(locationSetting, cursor.getLong(COL_WEATHER_DATE)));
-
                 }
-
-
             }
         }
         );
 
+        if (savedInstanceState != null && savedInstanceState.containsKey(LIST_ITEM_POSITION)) {
+            mPosition = savedInstanceState.getInt(LIST_ITEM_POSITION);
+        }
+
+
         return rootView;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        if (mPosition != ListView.INVALID_POSITION) {
+            outState.putInt(LIST_ITEM_POSITION, mPosition);
+        }
     }
 
     @Override
@@ -178,6 +196,10 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
     @Override
     public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor){
         mForecastAdapter.swapCursor(cursor);
+
+        if (mPosition != ListView.INVALID_POSITION) {
+            mListView.smoothScrollToPosition(mPosition);
+        }
     }
 
     @Override
@@ -188,7 +210,5 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
     public void onLocationChanged(){
         updateWeather();
         getLoaderManager().restartLoader(FORECAST_LOADER, null, this);
-
     }
-
 }

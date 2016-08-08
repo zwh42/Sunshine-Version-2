@@ -26,6 +26,7 @@ import android.view.MenuItem;
 public class MainActivity extends ActionBarActivity implements ForecastFragment.Callback {
 
     private static final String DETAILFRAGMENT_TAG = "DFTAG";
+
     private final String LOG_TAG = MainActivity.class.getSimpleName();
     private String mLocation;
     private boolean mTwoPane;
@@ -33,19 +34,22 @@ public class MainActivity extends ActionBarActivity implements ForecastFragment.
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
         mLocation = Utility.getPreferredLocation(this);
 
         if (findViewById(R.id.weather_detail_container) != null) {
             mTwoPane = true;
-
             if (savedInstanceState == null) {
                 getSupportFragmentManager().beginTransaction().replace(R.id.weather_detail_container, new DetailFragment(), DETAILFRAGMENT_TAG).commit();
-
             }
         } else {
             mTwoPane = false;
         }
+
+        ForecastFragment forecastFragment = (ForecastFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_forecast);
+        forecastFragment.setUseTodayLayout(!mTwoPane);
+
     }
 
 
