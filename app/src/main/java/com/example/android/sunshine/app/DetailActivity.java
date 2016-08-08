@@ -23,6 +23,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 public class DetailActivity extends ActionBarActivity {
+    private static final String TAG = "DetailActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +38,11 @@ public class DetailActivity extends ActionBarActivity {
                     .add(R.id.weather_detail_container, fragment)
                     .commit();
         }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
     }
 
 
