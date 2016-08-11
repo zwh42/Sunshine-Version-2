@@ -45,7 +45,7 @@ import java.util.Vector;
 public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
     public static final String LOG_TAG = SunshineSyncAdapter.class.getSimpleName();
 
-    public static final int SYNC_INTERVAL = 10;
+    public static final int SYNC_INTERVAL = 5;
     public static final int SYNC_FLEXTIME = SYNC_INTERVAL / 3;
 
     private static final String[] NOTIFY_WEATHER_PROJECTION = new String[]{
@@ -68,6 +68,10 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
     }
 
     private void notifyWeather() {
+        if (!Utility.isNotificationOn(getContext())) {
+            return;
+        }
+
         Context context = getContext();
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         String lastNotificationKey = context.getString(R.string.pref_last_notification);
@@ -79,7 +83,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
             Uri weatherUri = WeatherContract.WeatherEntry.buildWeatherLocationWithDate(locationQuery, System.currentTimeMillis());
             Cursor cursor = context.getContentResolver().query(weatherUri, NOTIFY_WEATHER_PROJECTION, null, null, null);
 
-            if (cursor.moveToFirst()) {
+            if (cursor != null && cursor.moveToFirst()) {
                 int weatherId = cursor.getInt(INDEX_WEATHER_ID);
                 double high = cursor.getDouble(INDEX_MAX_TEMP);
                 double low = cursor.getDouble(INDEX_MIN_TEMP);
@@ -94,7 +98,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
 
                 SharedPreferences.Editor editor = prefs.edit();
                 editor.putLong(lastNotificationKey, System.currentTimeMillis());
-                editor.commit();
+                editor.apply();
 
 
                 NotificationCompat.Builder weatherNotificationBuilder = new NotificationCompat.Builder(getContext())
@@ -114,6 +118,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
                 NotificationManager nm = (NotificationManager) getContext().getSystemService(getContext().NOTIFICATION_SERVICE);
                 nm.notify(WEATHER_NOTIFICATION_ID, weatherNotificationBuilder.build());
             }
+            cursor.close();
         }
 
 
@@ -327,6 +332,10 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
                 cVVector.toArray(cvArray);
                 getContext().getContentResolver().bulkInsert(WeatherContract.WeatherEntry.CONTENT_URI, cvArray);
             }
+
+            getContext().getContentResolver().delete(WeatherContract.WeatherEntry.CONTENT_URI,
+                    WeatherContract.WeatherEntry.COLUMN_DATE + "<= ?",
+                    new String[]{Long.toString(dayTime.setJulianDay(julianStartDay - 1))});
 
             Log.d(LOG_TAG, "Sunshine Service Complete. " + cVVector.size() + " Inserted");
 
